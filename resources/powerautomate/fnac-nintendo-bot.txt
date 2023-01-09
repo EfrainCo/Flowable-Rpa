@@ -1,0 +1,45 @@
+LOOP LoopIndex FROM 0 TO 1 STEP 0
+    Web.InvokeWebService.InvokeWebServiceUseAuth Url: $'''http://localhost:8090/external-job-api/acquire/jobs''' Method: Web.Method.Post Accept: $'''application/json''' ContentType: $'''application/json''' CustomHeaders: $'''Accept: */*''' RequestBody: $'''{
+  \"topic\": \"fnacBot\",
+  \"lockDuration\": \"PT1M\",
+  \"numberOfTasks\": 1,
+  \"numberOfRetries\": 10,
+  \"workerId\": \"fnacBot\",
+  \"scopeType\": \"bpmn\"
+}''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: True EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False Username: $'''admin''' Password: P'AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAtB6zHvBN0kS0NeeoLSl5xgQAAAACAAAAAAAQZgAAAAEAACAAAAAwK/EKiCoW8wywkFPfnjB5zCcFcwpNjJm5X0IjxhjzegAAAAAOgAAAAAIAACAAAACjVVwif9ntx2OPPdhtpuBcpOiXNHb1mQqNQEMo21ZKJxAAAAAAUs5KzF6+30So51Cqc6z5QAAAAGhYuDmpgSEDbXOLv6x7cgXGj4mdinusc/6vPHQFtumYx7bno1WLgXxM0F9nUJIs1GPJLURw7Hp149gcIo3AkIA=' Response=> WebServiceResponse StatusCode=> StatusCode
+    Variables.ConvertJsonToCustomObject Json: WebServiceResponse CustomObject=> JsonResponse
+    IF IsNotEmpty(JsonResponse) THEN
+        WebAutomation.LaunchChrome.LaunchChromeCloseDialog Url: $'''https://www.fnac.es/n127519/Nintendo/Consolas-Nintendo-Switch''' WindowState: WebAutomation.BrowserWindowState.Maximized ClearCache: False ClearCookies: False WaitForPageToLoadTimeout: 60 Timeout: 60 BrowserInstance=> Browser
+                ON ERROR
+                    GOTO Errors
+                END
+        WebAutomation.ExtractData.ExtractTable BrowserInstance: Browser Control: $'''html > body > div:eq(2) > div > div:eq(4) > div''' ExtractionParameters: {[$'''article > form > div:eq(1) > div > p:eq(0) > a''', $'''Own Text''', $'''''', $'''Value #1'''], [$'''article > form > div:eq(1) > div > p:eq(0) > a''', $'''Href''', $'''''', $'''Value #2'''], [$'''article > form > div:eq(2) > div > div > div > div > strong''', $'''Own Text''', $'''''', $'''Value #3'''], [$'''article > form > div:eq(0) > div:eq(0)   img''', $'''Source Link''', $'''''', $'''Value #4'''], [$'''article > form > div:eq(0) > div:eq(0)   img''', $'''data-lazyimage''', $'''''', $'''Value #5'''] } PostProcessData: False TimeoutInSeconds: 60 ExtractedData=> DataFromWebPage
+                ON ERROR
+                    GOTO Errors
+                END
+        WebAutomation.CloseWebBrowser BrowserInstance: Browser
+        SET RowIndex TO 0
+        LOOP FOREACH CurrentItem IN DataFromWebPage
+            IF IsNotEmpty(CurrentItem['Value #5']) THEN
+                SET DataFromWebPage[RowIndex]['Value #4'] TO DataFromWebPage[RowIndex]['Value #5']
+                SET DataFromWebPage[RowIndex]['Value #5'] TO $'''N/A'''
+            END
+            Variables.IncreaseVariable Value: RowIndex IncrementValue: 1
+        END
+        SET CorteIngles TO {{ }}
+        SET CorteIngles['DataFromWebPage'] TO DataFromWebPage
+        Variables.ConvertCustomObjectToJson CustomObject: CorteIngles Json=> CustomObjectAsJson
+        Text.Replace Text: CustomObjectAsJson TextToFind: $'''\"''' IsRegEx: False IgnoreCase: False ReplaceWith: $'''\'''' ActivateEscapeSequences: False Result=> Replaced
+        Web.InvokeWebService.InvokeWebServiceUseAuth Url: $'''http://localhost:8090/external-job-api/acquire/jobs/%JsonResponse[0].id%/complete''' Method: Web.Method.Post Accept: $'''application/json''' ContentType: $'''application/json''' CustomHeaders: $'''Accept: */*''' RequestBody: $'''{
+  \"workerId\": \"fnacBot\",
+  \"variables\": [
+    {
+      \"name\": \"fnacData\",
+      \"type\": \"string\",
+      \"value\": \"%Replaced%\"
+    }
+  ]
+}''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: True EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False Username: $'''admin''' Password: P'AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAtB6zHvBN0kS0NeeoLSl5xgQAAAACAAAAAAAQZgAAAAEAACAAAAAwK/EKiCoW8wywkFPfnjB5zCcFcwpNjJm5X0IjxhjzegAAAAAOgAAAAAIAACAAAACjVVwif9ntx2OPPdhtpuBcpOiXNHb1mQqNQEMo21ZKJxAAAAAAUs5KzF6+30So51Cqc6z5QAAAAGhYuDmpgSEDbXOLv6x7cgXGj4mdinusc/6vPHQFtumYx7bno1WLgXxM0F9nUJIs1GPJLURw7Hp149gcIo3AkIA=' Response=> WebServiceResponse StatusCode=> StatusCode
+    END
+    LABEL Errors
+END

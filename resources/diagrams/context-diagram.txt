@@ -1,0 +1,17 @@
+@startuml
+!include <C4/C4_Container>
+title System Context diagram for best Nintendo Switch prices using Flowable and RPA
+System(flowable, "Flowable")
+Person(user, "Customer")
+System_Ext(powerAutomate, "Power Automate")
+System(webPages, "Stores web pages")
+System(email, "Email")
+
+BiRel(user, flowable, "Uses")
+Rel(powerAutomate, flowable, "Claim and completes external worker task")
+Rel(powerAutomate, webPages, "Extracts data")
+Rel(flowable, email, "Sends notifications")
+
+UpdateRelStyle(user, flowable, $offsetX="-40", $offsetY="60", $lineColor="blue", $textColor="red")
+
+@enduml 

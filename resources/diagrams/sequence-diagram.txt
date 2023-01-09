@@ -1,0 +1,103 @@
+@startuml
+actor User
+participant Flowable
+participant PowerAutomate
+participant StoresWebPages
+participant UserFinancialInformation
+participant Email
+
+activate PowerAutomate #0978F6
+
+User -> Flowable: Start search
+activate Flowable #FFBBBB
+
+Flowable -> Flowable: Create external \nworker tasks
+activate Flowable #913945
+
+PowerAutomate -> Flowable: Claim external \nworker tasks
+activate PowerAutomate #005B96
+
+PowerAutomate -> StoresWebPages: Extracts data
+activate StoresWebPages #96B389
+
+StoresWebPages -> PowerAutomate: Data extracted
+deactivate StoresWebPages
+
+PowerAutomate -> Flowable: Completes worker task \nand creates variable \nwith nintendos found
+deactivate PowerAutomate
+deactivate Flowable
+
+Flowable -> Flowable: Filter by models chosen
+
+Flowable -> Flowable: Filter by max price
+
+Flowable -> User: Show Nintendos
+
+alt Buy now
+
+        User -> Flowable: Buy now
+
+        Flowable -> Flowable: Create external worker tasks
+        activate Flowable #913945
+
+        PowerAutomate -> Flowable: Claim external \nworker tasks
+        activate PowerAutomate #005B96
+
+        PowerAutomate -> UserFinancialInformation: Requests user \nfinancial information
+        activate UserFinancialInformation #96B389
+
+        UserFinancialInformation -> PowerAutomate: Retrieve user \nfinancial information
+        deactivate UserFinancialInformation #96B389
+
+        PowerAutomate -> Flowable: Completes worker task \nand creates variable \nwith user financial information
+        deactivate PowerAutomate
+        deactivate Flowable
+
+        Flowable -> Flowable: Analyze user financial information
+
+        alt User aproves
+
+        Flowable -> User: Show store shop url
+
+        else User fails
+
+        Flowable -> User: Message user don't
+
+        end
+
+    else Enable Notifications
+
+        User -> Flowable: Enable Notifications
+
+        loop Every day
+
+            Flowable -> Flowable: Create external worker tasks
+            activate Flowable #913945
+
+            PowerAutomate -> Flowable: Claim external \nworker tasks
+            activate PowerAutomate #005B96
+
+            PowerAutomate -> StoresWebPages: Extracts data
+            activate StoresWebPages #96B389
+
+            StoresWebPages -> PowerAutomate: Data extracted
+            deactivate StoresWebPages
+
+            PowerAutomate -> Flowable: Completes worker task \nand creates variable \nwith nintendos found
+            deactivate PowerAutomate
+            deactivate Flowable
+
+            Flowable -> Flowable: Filter by models chosen
+
+            Flowable -> Flowable: Filter by max price
+
+            Flowable -> Flowable: Compare with last day search
+
+            Flowable -> Email: Send email notification
+
+            Flowable -> User: Show nintendos
+
+        end
+
+    end
+@enduml

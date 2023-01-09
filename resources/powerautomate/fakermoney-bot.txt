@@ -1,0 +1,36 @@
+LOOP LoopIndex FROM 0 TO 1 STEP 0
+    Web.InvokeWebService.InvokeWebServiceUseAuth Url: $'''http://localhost:8090/external-job-api/acquire/jobs''' Method: Web.Method.Post Accept: $'''application/json''' ContentType: $'''application/json''' CustomHeaders: $'''Accept: */*''' RequestBody: $'''{
+  \"topic\": \"customerMoneyBot\",
+  \"lockDuration\": \"PT1M\",
+  \"numberOfTasks\": 1,
+  \"numberOfRetries\": 10,
+  \"workerId\": \"PowerAutomateMoneyBot\",
+  \"scopeType\": \"bpmn\"
+}''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: True EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False Username: $'''admin''' Password: P'AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAtB6zHvBN0kS0NeeoLSl5xgQAAAACAAAAAAAQZgAAAAEAACAAAAAwK/EKiCoW8wywkFPfnjB5zCcFcwpNjJm5X0IjxhjzegAAAAAOgAAAAAIAACAAAACjVVwif9ntx2OPPdhtpuBcpOiXNHb1mQqNQEMo21ZKJxAAAAAAUs5KzF6+30So51Cqc6z5QAAAAGhYuDmpgSEDbXOLv6x7cgXGj4mdinusc/6vPHQFtumYx7bno1WLgXxM0F9nUJIs1GPJLURw7Hp149gcIo3AkIA=' Response=> WebServiceResponse StatusCode=> StatusCode
+    Variables.ConvertJsonToCustomObject Json: WebServiceResponse CustomObject=> JsonResponse
+    IF IsNotEmpty(JsonResponse) THEN
+        Web.InvokeWebService.InvokeWebService Url: $'''https://fakerapi.it/api/v1/custom?_quantity=1&savings=number&futureExpenses=number&debt=number''' Method: Web.Method.Get Accept: $'''application/json''' ContentType: $'''application/json''' CustomHeaders: $'''Accept: */*''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: True EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False Response=> FakerApiResponse StatusCode=> StatusCode
+        Variables.ConvertJsonToCustomObject Json: FakerApiResponse CustomObject=> FakerApiResponseJson
+        SET data TO FakerApiResponseJson.data[0]
+        Web.InvokeWebService.InvokeWebServiceUseAuth Url: $'''http://localhost:8090/external-job-api/acquire/jobs/%JsonResponse[0].id%/complete''' Method: Web.Method.Post Accept: $'''application/json''' ContentType: $'''application/json''' CustomHeaders: $'''Accept: */*''' RequestBody: $'''{
+  \"workerId\": \"PowerAutomateMoneyBot\",
+  \"variables\": [
+    {
+      \"name\": \"savings\",
+      \"type\": \"double\",
+      \"value\": %data.savings%
+    },
+    {
+      \"name\": \"futureExpenses\",
+      \"type\": \"double\",
+      \"value\": %data.futureExpenses%
+    },
+    {
+      \"name\": \"debt\",
+      \"type\": \"double\",
+      \"value\": %data.debt%
+    }
+  ]
+}''' ConnectionTimeout: 30 FollowRedirection: True ClearCookies: False FailOnErrorStatus: True EncodeRequestBody: False UserAgent: $'''Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.21) Gecko/20100312 Firefox/3.6''' Encoding: Web.Encoding.AutoDetect AcceptUntrustedCertificates: False Username: $'''admin''' Password: P'AQAAANCMnd8BFdERjHoAwE/Cl+sBAAAAtB6zHvBN0kS0NeeoLSl5xgQAAAACAAAAAAAQZgAAAAEAACAAAAAwK/EKiCoW8wywkFPfnjB5zCcFcwpNjJm5X0IjxhjzegAAAAAOgAAAAAIAACAAAACjVVwif9ntx2OPPdhtpuBcpOiXNHb1mQqNQEMo21ZKJxAAAAAAUs5KzF6+30So51Cqc6z5QAAAAGhYuDmpgSEDbXOLv6x7cgXGj4mdinusc/6vPHQFtumYx7bno1WLgXxM0F9nUJIs1GPJLURw7Hp149gcIo3AkIA=' Response=> WebServiceResponse StatusCode=> StatusCode
+    END
+END
